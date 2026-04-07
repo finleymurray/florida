@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Florida 2026</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div id="pin-screen" class="pin-screen">
+  <div class="pin-box">
+    <div class="pin-logo"><div class="logo-dot"></div> Florida 2026</div>
+    <p class="pin-sub">Enter your PIN to continue</p>
+    <div class="pin-inputs">
+      <input type="tel" maxlength="1" class="pin-digit" data-index="0" autofocus>
+      <input type="tel" maxlength="1" class="pin-digit" data-index="1">
+      <input type="tel" maxlength="1" class="pin-digit" data-index="2">
+      <input type="tel" maxlength="1" class="pin-digit" data-index="3">
+    </div>
+    <p id="pin-error" class="pin-error"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app hidden">
+
+  <header>
+    <div class="header-inner">
+      <div class="logo"><div class="logo-dot"></div> Florida 2026</div>
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="calendar">Calendar</button>
+        <button class="tab" data-tab="costs">Costs</button>
+        <button class="tab" data-tab="hotels">Hotels</button>
+        <button class="tab" data-tab="tickets">Tickets</button>
+        <button class="tab" data-tab="links">Links</button>
+      </div>
+      <div class="header-right">
+        <span id="user-name" class="user-name"></span>
+        <span class="countdown-pill" id="countdown"></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <!-- CALENDAR -->
+    <div id="panel-calendar" class="tab-panel active">
+      <div class="grid-cal">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">September 2026</div>
+            <button class="add-btn" id="add-event-btn">+ Add event</button>
+          </div>
+          <div class="card-body">
+            <div class="cal-grid" id="calendar-grid"></div>
+            <div class="cal-legend">
+              <div class="legend-item"><div class="legend-swatch swatch-hhn"></div> HHN</div>
+              <div class="legend-item"><div class="legend-swatch swatch-park"></div> Park</div>
+              <div class="legend-item"><div class="legend-swatch swatch-travel"></div> Travel</div>
+              <div class="legend-item"><div class="legend-swatch swatch-hotel"></div> Hotel</div>
+              <div class="legend-item"><div class="legend-swatch swatch-food"></div> Food</div>
+              <div class="legend-item"><div class="legend-swatch swatch-note"></div> Note</div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-stack">
+          <div class="card" id="day-detail-card">
+            <div class="card-body" id="day-detail">
+              <div class="empty-state">Click a day to see its plan</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COSTS -->
+    <div id="panel-costs" class="tab-panel">
+      <div class="costs-layout">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Trip Costs</div>
+            <button class="add-btn" id="add-cost-btn">+ Add item</button>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <table class="costs-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>Qty</th>
+                  <th>Amount</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="costs-body"></tbody>
+            </table>
+            <div id="costs-empty" class="empty-state" style="padding:32px;">No costs yet — add your first item</div>
+          </div>
+        </div>
+        <div class="cost-summary">
+          <div class="card">
+            <div class="card-body" id="cost-summary"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOTELS -->
+    <div id="panel-hotels" class="tab-panel">
+      <div class="section-header">
+        <h2>Hotel Options</h2>
+        <button class="add-btn" id="add-hotel-btn">+ Add option</button>
+      </div>
+      <div class="hotel-list" id="hotels-list">
+        <div id="hotels-empty" class="empty-state">No hotels added yet</div>
+      </div>
+    </div>
+
+    <!-- TICKETS (static info page) -->
+    <div id="panel-tickets" class="tab-panel">
+      <h2 class="section-heading">Tickets & Passes</h2>
+      <p class="section-sub">Reference pricing — check Universal's site for exact dates.</p>
+      <div class="ticket-grid">
+        <div class="ticket">
+          <div class="ticket-type">HHN Single Night</div>
+          <div class="ticket-price">~$89.99</div>
+          <div class="ticket-per">per person, per night</div>
+          <div class="ticket-desc">General admission to HHN (7pm-2am). No Express. Wed/Thu cheapest.</div>
+        </div>
+        <div class="ticket recommended">
+          <div class="ticket-type">HHN + Express Pass</div>
+          <div class="ticket-price accent">~$189.99</div>
+          <div class="ticket-per">per person, per night</div>
+          <div class="ticket-desc">HHN + skip-the-line for every haunted house. Essential for Fri/Sat. Sells out early.</div>
+        </div>
+        <div class="ticket">
+          <div class="ticket-type">Park-to-Park (Daytime)</div>
+          <div class="ticket-price">~$260</div>
+          <div class="ticket-per">per person, 3-day pass</div>
+          <div class="ticket-desc">Universal Studios + Islands of Adventure + Volcano Bay. Multi-day is much better value.</div>
+        </div>
+        <div class="ticket">
+          <div class="ticket-type">R.I.P. Tour</div>
+          <div class="ticket-price purple">$299+</div>
+          <div class="ticket-per">per person, per night</div>
+          <div class="ticket-desc">Guided front-of-line for all houses, exclusive areas, free food & drink. Sells out months ahead.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINKS -->
+    <div id="panel-links" class="tab-panel">
+      <div class="section-header">
+        <h2>Links & Notes</h2>
+        <button class="add-btn" id="add-link-btn">+ Add link</button>
+      </div>
+      <div class="links-list" id="links-list">
+        <div id="links-empty" class="empty-state">No links added yet</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <h3 id="modal-title"></h3>
+    <form id="modal-form"></form>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="modal-cancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
