@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Florida 2026</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎢</text></svg>">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -119,35 +120,14 @@
       </div>
     </div>
 
-    <!-- TICKETS (static info page) -->
+    <!-- TICKETS -->
     <div id="panel-tickets" class="tab-panel">
-      <h2 class="section-heading">Tickets & Passes</h2>
-      <p class="section-sub">Reference pricing — check Universal's site for exact dates.</p>
-      <div class="ticket-grid">
-        <div class="ticket">
-          <div class="ticket-type">HHN Single Night</div>
-          <div class="ticket-price">~$89.99</div>
-          <div class="ticket-per">per person, per night</div>
-          <div class="ticket-desc">General admission to HHN (7pm-2am). No Express. Wed/Thu cheapest.</div>
-        </div>
-        <div class="ticket recommended">
-          <div class="ticket-type">HHN + Express Pass</div>
-          <div class="ticket-price accent">~$189.99</div>
-          <div class="ticket-per">per person, per night</div>
-          <div class="ticket-desc">HHN + skip-the-line for every haunted house. Essential for Fri/Sat. Sells out early.</div>
-        </div>
-        <div class="ticket">
-          <div class="ticket-type">Park-to-Park (Daytime)</div>
-          <div class="ticket-price">~$260</div>
-          <div class="ticket-per">per person, 3-day pass</div>
-          <div class="ticket-desc">Universal Studios + Islands of Adventure + Volcano Bay. Multi-day is much better value.</div>
-        </div>
-        <div class="ticket">
-          <div class="ticket-type">R.I.P. Tour</div>
-          <div class="ticket-price purple">$299+</div>
-          <div class="ticket-per">per person, per night</div>
-          <div class="ticket-desc">Guided front-of-line for all houses, exclusive areas, free food & drink. Sells out months ahead.</div>
-        </div>
+      <div class="section-header">
+        <h2>Tickets & Passes</h2>
+        <button class="add-btn" id="add-ticket-btn">+ Add ticket</button>
+      </div>
+      <div class="ticket-grid" id="tickets-list">
+        <div id="tickets-empty" class="empty-state">No tickets added yet</div>
       </div>
     </div>
 

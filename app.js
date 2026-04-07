@@ -17,6 +17,7 @@ let selectedDate = null;
 let calendarEvents = [];
 let costItems = [];
 let hotels = [];
+let tickets = [];
 let links = [];
 
 // =============================
@@ -107,10 +108,11 @@ async function init() {
   setupTabs();
   setupModalClose();
   setupAddButtons();
-  await Promise.all([loadCalendarEvents(), loadCosts(), loadHotels(), loadLinks()]);
+  await Promise.all([loadCalendarEvents(), loadCosts(), loadHotels(), loadTickets(), loadLinks()]);
   renderCalendar();
   renderCosts();
   renderHotels();
+  renderTickets();
   renderLinks();
   subscribeRealtime();
 }
@@ -195,6 +197,7 @@ function setupAddButtons() {
   document.getElementById('add-event-btn').addEventListener('click', () => openAddEvent());
   document.getElementById('add-cost-btn').addEventListener('click', () => openAddCost());
   document.getElementById('add-hotel-btn').addEventListener('click', () => openAddHotel());
+  document.getElementById('add-ticket-btn').addEventListener('click', () => openAddTicket());
   document.getElementById('add-link-btn').addEventListener('click', () => openAddLink());
 }
 
@@ -232,7 +235,7 @@ function renderCalendar() {
     const events = calendarEvents.filter(e => e.date === dateStr);
 
     let cls = 'cal-day';
-    if (isTrip) cls += ' in-trip';
+    // no special styling for trip dates — events show what's planned
     if (isSel) cls += ' selected';
 
     html += `<div class="${cls}" data-date="${dateStr}">`;
@@ -547,6 +550,71 @@ function openAddHotel() {
 }
 
 // =============================
+//  TICKETS
+// =============================
+async function loadTickets() {
+  const { data } = await sb.from('tickets').select('*').order('created_at');
+  tickets = data || [];
+}
+
+function renderTickets() {
+  const list = document.getElementById('tickets-list');
+  const empty = document.getElementById('tickets-empty');
+
+  if (tickets.length === 0) {
+    list.innerHTML = '';
+    list.appendChild(empty);
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  list.innerHTML = tickets.map(t => `
+    <div class="ticket">
+      <div class="ticket-top-row">
+        <div>
+          <div class="ticket-type">${esc(t.name)}</div>
+          <div class="ticket-price">${esc(t.price)}</div>
+          <div class="ticket-per">${esc(t.per || '')}</div>
+        </div>
+        <button class="ticket-delete" data-id="${t.id}" title="Remove">&times;</button>
+      </div>
+      ${t.description ? `<div class="ticket-desc">${esc(t.description)}</div>` : ''}
+      ${t.link ? `<a href="${esc(t.link)}" target="_blank" rel="noopener" class="btn" style="margin-top:10px;">View ↗</a>` : ''}
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.ticket-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await sb.from('tickets').delete().eq('id', btn.dataset.id);
+      await loadTickets();
+      renderTickets();
+    });
+  });
+}
+
+function openAddTicket() {
+  openModal('Add Ticket / Pass', [
+    { name: 'name', label: 'Name', placeholder: 'e.g. HHN Single Night' },
+    { name: 'price', label: 'Price', placeholder: 'e.g. $89.99' },
+    { name: 'per', label: 'Per', placeholder: 'e.g. per person, per night' },
+    { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Details about this ticket...' },
+    { name: 'link', label: 'Link (optional)', type: 'url', placeholder: 'https://...' },
+  ], async (data) => {
+    if (!data.name.trim()) return;
+    await sb.from('tickets').insert({
+      name: data.name.trim(),
+      price: data.price.trim() || null,
+      per: data.per.trim() || null,
+      description: data.description.trim() || null,
+      link: data.link.trim() || null,
+    });
+    await loadTickets();
+    renderTickets();
+  });
+}
+
+// =============================
 //  LINKS
 // =============================
 async function loadLinks() {
@@ -622,6 +690,10 @@ function subscribeRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'hotels' }, async () => {
       await loadHotels();
       renderHotels();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, async () => {
+      await loadTickets();
+      renderTickets();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'links' }, async () => {
       await loadLinks();
