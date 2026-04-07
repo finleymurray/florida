@@ -489,7 +489,7 @@ header {
   margin-top: 12px;
   align-items: center;
 }
-.hotel-delete {
+.hotel-edit, .hotel-delete {
   background: none;
   border: none;
   color: var(--text-3);
@@ -497,9 +497,10 @@ header {
   font-size: 13px;
   padding: 4px 8px;
   border-radius: 4px;
-  margin-left: auto;
 }
+.hotel-edit:hover { color: var(--accent); background: var(--accent-light); }
 .hotel-delete:hover { color: var(--red); background: #fef2f2; }
+.hotel-delete { margin-left: auto; }
 
 /* ========= */
 /*  TICKETS  */
@@ -598,7 +599,7 @@ header {
 .link-info { flex: 1; min-width: 0; }
 .link-title { font-size: 14px; font-weight: 500; }
 .link-desc { font-size: 12px; color: var(--text-3); }
-.link-delete {
+.link-edit, .link-delete {
   background: none;
   border: none;
   color: var(--text-3);
@@ -608,6 +609,7 @@ header {
   border-radius: 4px;
   flex-shrink: 0;
 }
+.link-edit:hover { color: var(--accent); background: var(--accent-light); }
 .link-delete:hover { color: var(--red); background: #fef2f2; }
 
 /* ======= */

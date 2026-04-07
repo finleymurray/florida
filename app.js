@@ -8,8 +8,8 @@ const SUPABASE_ANON_KEY = 'sb_publishable_vtVvl0mAQMfoWEhVV7wHlw_wHKQfysF';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Trip dates (Sep 10-17 2026)
-const TRIP_START = '2026-09-10';
-const TRIP_END = '2026-09-17';
+const TRIP_START = '2026-09-21';
+const TRIP_END = '2026-09-28';
 
 // State
 let currentUser = null;
@@ -298,7 +298,7 @@ function renderDayDetail() {
     html += '<div class="plan-list">';
     events.forEach(ev => {
       const time = ev.time_slot ? ev.time_slot.slice(0, 5) : '';
-      html += `<div class="plan-row">`;
+      html += `<div class="plan-row" data-edit-event="${ev.id}" style="cursor:pointer;" title="Click to edit">`;
       html += `<div class="plan-time">${time}</div>`;
       html += `<div class="plan-line ${ev.type}"></div>`;
       html += `<div style="flex:1;min-width:0"><div class="plan-text">${esc(ev.title)}</div>`;
@@ -313,6 +313,15 @@ function renderDayDetail() {
   html += `<button class="add-btn" style="margin-top:14px; width:100%;" id="add-event-day">+ Add to this day</button>`;
 
   detail.innerHTML = html;
+
+  // Edit handlers
+  detail.querySelectorAll('[data-edit-event]').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.plan-delete')) return;
+      const ev = calendarEvents.find(x => x.id === row.dataset.editEvent);
+      if (ev) openEditEvent(ev);
+    });
+  });
 
   // Delete handlers
   detail.querySelectorAll('.plan-delete').forEach(btn => {
@@ -358,6 +367,35 @@ function openAddEvent(prefillDate) {
   });
 }
 
+function openEditEvent(ev) {
+  openModal('Edit Event', [
+    { name: 'date', label: 'Date', type: 'date', default: ev.date },
+    { name: 'title', label: 'Title', default: ev.title },
+    { name: 'type', label: 'Type', type: 'select', default: ev.type, options: [
+      { value: 'hhn', label: 'HHN' },
+      { value: 'park', label: 'Park' },
+      { value: 'travel', label: 'Travel' },
+      { value: 'hotel', label: 'Hotel' },
+      { value: 'food', label: 'Food' },
+      { value: 'note', label: 'Note' },
+    ]},
+    { name: 'time_slot', label: 'Time (optional)', type: 'time', default: ev.time_slot ? ev.time_slot.slice(0, 5) : '' },
+    { name: 'notes', label: 'Notes (optional)', type: 'textarea', default: ev.notes || '' },
+  ], async (data) => {
+    if (!data.title.trim()) return;
+    await sb.from('calendar_events').update({
+      date: data.date,
+      title: data.title.trim(),
+      type: data.type,
+      time_slot: data.time_slot || null,
+      notes: data.notes.trim() || null,
+    }).eq('id', ev.id);
+    await loadCalendarEvents();
+    renderCalendar();
+    renderDayDetail();
+  });
+}
+
 // =============================
 //  COSTS
 // =============================
@@ -379,17 +417,26 @@ function renderCosts() {
   empty.classList.add('hidden');
 
   body.innerHTML = costItems.map(item => `
-    <tr>
+    <tr data-edit-cost="${item.id}" style="cursor:pointer;" title="Click to edit">
       <td class="item-name">${esc(item.name)}</td>
       <td><span class="item-cat cat-${item.category}">${item.category}</span></td>
       <td>${item.quantity || '—'}</td>
-      <td class="amount">$${Number(item.amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+      <td class="amount">£${Number(item.amount).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
       <td><button class="delete-row-btn" data-id="${item.id}">&times;</button></td>
     </tr>
   `).join('');
 
+  body.querySelectorAll('[data-edit-cost]').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.delete-row-btn')) return;
+      const item = costItems.find(x => x.id === row.dataset.editCost);
+      if (item) openEditCost(item);
+    });
+  });
+
   body.querySelectorAll('.delete-row-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       await sb.from('cost_items').delete().eq('id', btn.dataset.id);
       await loadCosts();
       renderCosts();
@@ -410,7 +457,7 @@ function renderCostSummary() {
     categories[item.category] = (categories[item.category] || 0) + amt;
   });
 
-  const fmt = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const fmt = (n) => '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   let html = '<div style="font-size:14px; font-weight:600; margin-bottom:16px;">Summary</div>';
 
@@ -460,6 +507,33 @@ function openAddCost() {
   });
 }
 
+function openEditCost(item) {
+  openModal('Edit Cost Item', [
+    { name: 'name', label: 'Item', default: item.name },
+    { name: 'category', label: 'Category', type: 'select', default: item.category, options: [
+      { value: 'tickets', label: 'Tickets' },
+      { value: 'hotel', label: 'Hotel' },
+      { value: 'flights', label: 'Flights' },
+      { value: 'food', label: 'Food' },
+      { value: 'other', label: 'Other' },
+    ]},
+    { name: 'quantity', label: 'Quantity', type: 'number', default: String(item.quantity || 1) },
+    { name: 'amount', label: 'Total Amount (£)', type: 'number', default: String(item.amount) },
+    { name: 'notes', label: 'Notes (optional)', type: 'textarea', default: item.notes || '' },
+  ], async (data) => {
+    if (!data.name.trim() || !data.amount) return;
+    await sb.from('cost_items').update({
+      name: data.name.trim(),
+      category: data.category,
+      quantity: parseInt(data.quantity) || 1,
+      amount: parseFloat(data.amount) || 0,
+      notes: data.notes.trim() || null,
+    }).eq('id', item.id);
+    await loadCosts();
+    renderCosts();
+  });
+}
+
 // =============================
 //  HOTELS
 // =============================
@@ -498,17 +572,25 @@ function renderHotels() {
             <div class="hotel-name">${esc(h.name)}</div>
             <div class="hotel-loc">${esc(h.location || '')}</div>
           </div>
-          ${h.price_per_night ? `<div class="hotel-price">$${Number(h.price_per_night).toFixed(0)}<small>/night</small></div>` : ''}
+          ${h.price_per_night ? `<div class="hotel-price">£${Number(h.price_per_night).toFixed(0)}<small>/night</small></div>` : ''}
         </div>
         ${tags ? `<div style="margin-bottom:8px">${tags}</div>` : ''}
         <div class="hotel-detail">${pros}${pros && cons ? '<br>' : ''}${cons}</div>
         <div class="hotel-actions">
           ${h.link ? `<a href="${esc(h.link)}" target="_blank" rel="noopener" class="btn btn-primary">View ↗</a>` : ''}
+          <button class="hotel-edit" data-id="${h.id}">Edit</button>
           <button class="hotel-delete" data-id="${h.id}">Remove</button>
         </div>
       </div>
     `;
   }).join('');
+
+  list.querySelectorAll('.hotel-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const h = hotels.find(x => x.id === btn.dataset.id);
+      if (h) openEditHotel(h);
+    });
+  });
 
   list.querySelectorAll('.hotel-delete').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -549,6 +631,36 @@ function openAddHotel() {
   });
 }
 
+function openEditHotel(h) {
+  openModal('Edit Hotel', [
+    { name: 'name', label: 'Hotel Name', default: h.name },
+    { name: 'location', label: 'Location', default: h.location || '' },
+    { name: 'price_per_night', label: 'Price Per Night (£)', type: 'number', default: String(h.price_per_night || '') },
+    { name: 'link', label: 'Booking Link', type: 'url', default: h.link || '' },
+    { name: 'pros', label: 'Pros (one per line)', type: 'textarea', default: h.pros || '' },
+    { name: 'cons', label: 'Cons (one per line)', type: 'textarea', default: h.cons || '' },
+    { name: 'tags', label: 'Tags (comma separated)', default: (h.tags || []).join(', ') },
+    { name: 'is_top_pick', label: 'Top Pick?', type: 'select', default: String(h.is_top_pick), options: [
+      { value: 'false', label: 'No' },
+      { value: 'true', label: 'Yes' },
+    ]},
+  ], async (data) => {
+    if (!data.name.trim()) return;
+    await sb.from('hotels').update({
+      name: data.name.trim(),
+      location: data.location.trim() || null,
+      price_per_night: parseFloat(data.price_per_night) || null,
+      link: data.link.trim() || null,
+      pros: data.pros.trim() || null,
+      cons: data.cons.trim() || null,
+      tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      is_top_pick: data.is_top_pick === 'true',
+    }).eq('id', h.id);
+    await loadHotels();
+    renderHotels();
+  });
+}
+
 // =============================
 //  TICKETS
 // =============================
@@ -570,7 +682,7 @@ function renderTickets() {
   empty.classList.add('hidden');
 
   list.innerHTML = tickets.map(t => `
-    <div class="ticket">
+    <div class="ticket" data-edit-ticket="${t.id}" style="cursor:pointer;" title="Click to edit">
       <div class="ticket-top-row">
         <div>
           <div class="ticket-type">${esc(t.name)}</div>
@@ -584,8 +696,17 @@ function renderTickets() {
     </div>
   `).join('');
 
+  list.querySelectorAll('[data-edit-ticket]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.ticket-delete') || e.target.closest('a')) return;
+      const t = tickets.find(x => x.id === el.dataset.editTicket);
+      if (t) openEditTicket(t);
+    });
+  });
+
   list.querySelectorAll('.ticket-delete').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
       await sb.from('tickets').delete().eq('id', btn.dataset.id);
       await loadTickets();
       renderTickets();
@@ -609,6 +730,27 @@ function openAddTicket() {
       description: data.description.trim() || null,
       link: data.link.trim() || null,
     });
+    await loadTickets();
+    renderTickets();
+  });
+}
+
+function openEditTicket(t) {
+  openModal('Edit Ticket', [
+    { name: 'name', label: 'Name', default: t.name },
+    { name: 'price', label: 'Price', default: t.price || '' },
+    { name: 'per', label: 'Per', default: t.per || '' },
+    { name: 'description', label: 'Description', type: 'textarea', default: t.description || '' },
+    { name: 'link', label: 'Link (optional)', type: 'url', default: t.link || '' },
+  ], async (data) => {
+    if (!data.name.trim()) return;
+    await sb.from('tickets').update({
+      name: data.name.trim(),
+      price: data.price.trim() || null,
+      per: data.per.trim() || null,
+      description: data.description.trim() || null,
+      link: data.link.trim() || null,
+    }).eq('id', t.id);
     await loadTickets();
     renderTickets();
   });
@@ -641,9 +783,17 @@ function renderLinks() {
         <div class="link-title">${esc(l.title)}</div>
         ${l.description ? `<div class="link-desc">${esc(l.description)}</div>` : ''}
       </a>
+      <button class="link-edit" data-id="${l.id}" title="Edit">&#9998;</button>
       <button class="link-delete" data-id="${l.id}" title="Remove">&times;</button>
     </div>
   `).join('');
+
+  list.querySelectorAll('.link-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const l = links.find(x => x.id === btn.dataset.id);
+      if (l) openEditLink(l);
+    });
+  });
 
   list.querySelectorAll('.link-delete').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -668,6 +818,25 @@ function openAddLink() {
       description: data.description.trim() || null,
       emoji: data.emoji || '📍',
     });
+    await loadLinks();
+    renderLinks();
+  });
+}
+
+function openEditLink(l) {
+  openModal('Edit Link', [
+    { name: 'title', label: 'Title', default: l.title },
+    { name: 'url', label: 'URL', type: 'url', default: l.url },
+    { name: 'description', label: 'Description (optional)', default: l.description || '' },
+    { name: 'emoji', label: 'Emoji', default: l.emoji || '📍' },
+  ], async (data) => {
+    if (!data.title.trim() || !data.url.trim()) return;
+    await sb.from('links').update({
+      title: data.title.trim(),
+      url: data.url.trim(),
+      description: data.description.trim() || null,
+      emoji: data.emoji || '📍',
+    }).eq('id', l.id);
     await loadLinks();
     renderLinks();
   });
