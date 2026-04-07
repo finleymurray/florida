@@ -8,8 +8,8 @@ const SUPABASE_ANON_KEY = 'sb_publishable_vtVvl0mAQMfoWEhVV7wHlw_wHKQfysF';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Trip dates (Sep 10-17 2026)
-const TRIP_START = '2026-09-21';
-const TRIP_END = '2026-09-28';
+const TRIP_START = '2026-09-14';
+const TRIP_END = '2026-09-21';
 
 // State
 let currentUser = null;
