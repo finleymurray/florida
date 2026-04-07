@@ -416,15 +416,21 @@ function renderCosts() {
   }
   empty.classList.add('hidden');
 
-  body.innerHTML = costItems.map(item => `
+  body.innerHTML = costItems.map(item => {
+    const unit = Number(item.amount);
+    const qty = item.quantity || 1;
+    const total = unit * qty;
+    const fmtN = (n) => '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return `
     <tr data-edit-cost="${item.id}" style="cursor:pointer;" title="Click to edit">
       <td class="item-name">${esc(item.name)}</td>
       <td><span class="item-cat cat-${item.category}">${item.category}</span></td>
-      <td>${item.quantity || '—'}</td>
-      <td class="amount">£${Number(item.amount).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+      <td class="amount">${fmtN(unit)}</td>
+      <td>${qty}</td>
+      <td class="amount">${fmtN(total)}</td>
       <td><button class="delete-row-btn" data-id="${item.id}">&times;</button></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 
   body.querySelectorAll('[data-edit-cost]').forEach(row => {
     row.addEventListener('click', (e) => {
@@ -452,9 +458,9 @@ function renderCostSummary() {
   let total = 0;
 
   costItems.forEach(item => {
-    const amt = Number(item.amount);
-    total += amt;
-    categories[item.category] = (categories[item.category] || 0) + amt;
+    const lineTotal = Number(item.amount) * (item.quantity || 1);
+    total += lineTotal;
+    categories[item.category] = (categories[item.category] || 0) + lineTotal;
   });
 
   const fmt = (n) => '£' + n.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -491,7 +497,7 @@ function openAddCost() {
       { value: 'other', label: 'Other' },
     ]},
     { name: 'quantity', label: 'Quantity', type: 'number', default: '1' },
-    { name: 'amount', label: 'Total Amount ($)', type: 'number', placeholder: '0.00' },
+    { name: 'amount', label: 'Unit Price (£)', type: 'number', placeholder: '0.00' },
     { name: 'notes', label: 'Notes (optional)', type: 'textarea', placeholder: 'Any details...' },
   ], async (data) => {
     if (!data.name.trim() || !data.amount) return;
@@ -518,7 +524,7 @@ function openEditCost(item) {
       { value: 'other', label: 'Other' },
     ]},
     { name: 'quantity', label: 'Quantity', type: 'number', default: String(item.quantity || 1) },
-    { name: 'amount', label: 'Total Amount (£)', type: 'number', default: String(item.amount) },
+    { name: 'amount', label: 'Unit Price (£)', type: 'number', default: String(item.amount) },
     { name: 'notes', label: 'Notes (optional)', type: 'textarea', default: item.notes || '' },
   ], async (data) => {
     if (!data.name.trim() || !data.amount) return;

@@ -370,9 +370,11 @@ header {
   border-bottom: 2px solid var(--border);
 }
 .costs-table th:nth-child(3),
-.costs-table td:nth-child(3) { text-align: center; }
+.costs-table td:nth-child(3) { text-align: right; }
 .costs-table th:nth-child(4),
-.costs-table td:nth-child(4) { text-align: right; }
+.costs-table td:nth-child(4) { text-align: center; }
+.costs-table th:nth-child(5),
+.costs-table td:nth-child(5) { text-align: right; }
 .costs-table th:last-child,
 .costs-table td:last-child { text-align: center; width: 40px; }
 .costs-table td {
